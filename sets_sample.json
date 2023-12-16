@@ -1,0 +1,51 @@
+{
+    "set-0":{
+        "requests": {
+            "req-0": {
+                "url": "http://localhost:8080/echo",
+                "method": "GET",
+                "headers": {
+                    "Accept": "application/json"
+                }
+            },
+            "req-1": {
+                "url": "http://localhost:8080/echo",
+                "method": "POST",
+                "headers": {
+                    "Accept": "application/json"
+                },
+                "body": {
+                    "type": "json",
+                    "value": {
+                        "foo": "bar"
+                    }
+                }
+            }
+        }
+    },
+
+    "set-1":{
+        "requests": {
+            "req-0": {
+                "url": "http://localhost:8080/echo",
+                "method": "GET",
+                "headers": {
+                    "Accept": "application/json"
+                }
+            },
+            "req-1": {
+                "url": "http://localhost:8080/echo",
+                "method": "POST",
+                "headers": {
+                    "Accept": "application/json"
+                },
+                "body": {
+                    "type": "json",
+                    "value": {
+                        "foo": "bar"
+                    }
+                }
+            }
+        }
+    }
+}
