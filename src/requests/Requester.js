@@ -1,11 +1,24 @@
 const headers = require("./headers");
+const methods = require("./methods");
 
 
 
 class Requester {
-    constructor(){
+    constructor(url=null){
+        this.methods = methods;
         this.headers = headers;
         Object.seal(this.headers);
+        this.url = url;
+        console.log(this.url)
+    }
+
+    setBody (body){
+        this.body = body;
+    }
+
+    setURL(url){
+        const HTTPtag = "http://";
+        this.url = url.startsWith(HTTPtag) ? url : HTTPtag + url;
     }
 
     setHeader(Hkey, Hvalue){
@@ -21,6 +34,12 @@ class Requester {
             this.headers[Hkey] = null;
         } catch (error) {
             throw new Error("Invalid Header");
+        }
+    }
+
+    validateMethod(method){
+        if (!this.methods.hasOwnProperty(method)) {
+            throw new Error("Invalid Method");
         }
     }
 
@@ -65,31 +84,43 @@ class Requester {
         return filteredHeaders;
     }
 
-    async httpGet(url, costumHeaders=null){
-        const HTTPtag = "http://";
-        url = url.startsWith(HTTPtag) ? url : HTTPtag + url;
+    async #req(method, costumURL=null, costumHeaders=null, body=null){
+        const httptag = "http://";
+        const url = this.url || costumURL;
         try {
-            if (costumHeaders == null) {
-                const filteredHeaders = this.#filterHeaders();
-                console.log(filteredHeaders);
-                const response = await fetch(url, {
-                    method: "GET",
-                    headers: filteredHeaders
-                });
-                return response;
-            }
-            else {
-                this.validateCostumHeaders(costumHeaders);
-                const response = await fetch(url, {
-                    method: "GET",
-                    headers: costumHeaders
-                });
-                return response;
-            }
+            this.validateMethod(method);
+            const headers = costumHeaders ? this.validateCostumHeaders(costumHeaders) : this.#filterHeaders();
+            const res = await fetch(url, {
+                method: method,
+                headers: headers,
+                body: this.body ? JSON.stringify(this.body) : null
+            });
+            return res;
         } catch (error) {
-            throw new Error("GET Request Failed",{cause: error});
+            throw new Error("Request Failed",{cause: error});
         }
     }
+
+    async httpGet(costumURL=null, costumHeaders=null){
+        return await this.#req(this.methods.GET, costumURL, costumHeaders);
+    }
+
+    async httpPost(costumURL=null, costumHeaders=null, body=null){
+        return await this.#req(this.methods.POST, costumURL, costumHeaders, body);
+    }
+
+    attachAsyncRunner(runnerCallBack){
+        this.runner = runnerCallBack;
+    }
+
+    async runAsyncRunner(){
+        try {
+            return await this.runner();
+        } catch (error) {
+            throw new Error("Failed to run runner",{cause: error})
+        }
+    }
+    
 }
 
 module.exports = Requester;
