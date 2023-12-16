@@ -62,7 +62,7 @@ class RequestTest {
             let end_ms = performance.now();
             let testres = this.#create_test_res(res, end_ms-start_ms);
             let result = {"test-result": testres};
-            if (this.options?.listenForCookies){
+            if (this.options?.listenForCookies && res.headers["set-cookie"]){
                 result["set-cookie"]=res.headers["set-cookie"];
             }
             if (this.options?.getData){
