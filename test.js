@@ -1,7 +1,8 @@
 
 const setLoader = require('./src/setLoader');
 const RequestTest = require('./src/RequestTest');
-const CostumTest = require('./src/CostumTest');
+const CustomTest= require('./src/CustomTest');
+const CookieTracker = require('./src/CookieTracker');
 
 
 const testfun0 = () => {
@@ -21,30 +22,28 @@ const testfun0 = () => {
 }
 
 async function testCostumTest(){
-    const costumtester = new CostumTest('auth_micro',{
+    const costumtester = new CustomTest('auth_micro',{
         useCookie: true,
         includeRespData: true
     });
     
     const myCostumCallback = async() => {
-        costumtester.createTestCallback('entry', (res) => {
-            return res.status == '200';
-        });
-        costumtester.createTestCallback('login', (res) => {
-            return res.status == '200';
-        });
+        const checkOK = (res) => {return res.status == '200';};
+        costumtester.createTestCallback('entry', checkOK);
+        costumtester.createTestCallback('login', checkOK);
+        costumtester.createTestCallback('logout', checkOK);
+        costumtester.createTestCallback('register', checkOK);
 
-        let results = [];
-        let res = await costumtester.runCallback('login');
-        results = [...results, res];
-        res = await costumtester.runCallback('entry');
-        results = [...results, res];
-        return results;
+        const cookieTracker = new CookieTracker(costumtester.initCookie);
+
+        const res = await costumtester.runAllCallbacksInSequence(['entry','login','logout', 'register'], cookieTracker);
+        return res;
     }
 
-    costumtester.attachCostumCallback('costum', myCostumCallback);
-    const result = await costumtester.runCostumCallback('costum');
+    costumtester.attachTestProcedure('costum', myCostumCallback);
+    const result = await costumtester.runTestProcedure('costum');
     console.log(result);
+    
 }
 
 testCostumTest();

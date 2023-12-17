@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const SETS_PATH = path.join(__dirname, '../sets.json');
+const SETS_PATH = path.join(__dirname, '../data/sets.json');
 
 function setLoader(set_id){
     try {
