@@ -9,6 +9,7 @@
   "author": "Sahidev1",
   "license": "ISC",
   "dependencies": {
+    "async-lock": "^1.4.0",
     "axios": "^1.6.2"
   }
 }

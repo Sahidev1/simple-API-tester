@@ -60,7 +60,7 @@ async function apiTester0(){
         const checkOK = (res) => {return res.status == '200'};
         const alterer  = authmicroSet.getNewRequestAlterer('register');
         const logAlterer = authmicroSet.getNewRequestAlterer('login');
-        const varAccesor = authmicroSet.getVarAccessor();
+        const varAccesor = await authmicroSet.getVarAccessor();
 
         const cookietracker = new CookieTracker(authmicroSet.initCookie);
 

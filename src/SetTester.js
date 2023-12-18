@@ -1,18 +1,21 @@
+/**
+ * Represents a SetTester class that is used to test a set of requests.
+ * @class
+ */
 const CookieTracker = require("./CookieTracker");
 const RequestAlterer = require("./RequestAlterer");
 const RequestTest = require("./RequestTest");
 const VarAccesor = require("./VarAccesor");
 const setLoader = require("./setLoader");
 
-
 class SetTester {
     /**
-     * 
-     * @param {Object} set_id 
-     * @param {Object} [options]
-     * @param {boolean} [options.useCookie]
-     * @param {string} [options.myCookie]
-     * @param {boolean} [options.includeRespData]
+     * Creates an instance of SetTester.
+     * @param {Object} set_id - The ID of the set.
+     * @param {Object} [options] - Additional options.
+     * @param {boolean} [options.useCookie] - Whether to use cookies.
+     * @param {string} [options.myCookie] - The initial cookie value.
+     * @param {boolean} [options.includeRespData] - Whether to include response data.
      */
     constructor(set_id, options=null){
         try {
@@ -25,8 +28,10 @@ class SetTester {
         }
     }
 
-    
-
+    /**
+     * Initializes the SetTester instance.
+     * @private
+     */
     #init(){
         try {
             this.request_ids = Object.keys(this.set.requests);
@@ -44,6 +49,12 @@ class SetTester {
         }
     }
 
+    /**
+     * Creates the options object for a request.
+     * @param {CookieTracker} [cookieTracker=null] - The cookie tracker instance.
+     * @returns {Object} The options object.
+     * @private
+     */
     #createOptions(cookieTracker=null){
         const opt = {};
         if (this.useCookie) opt.listenForCookies = true;
@@ -63,8 +74,8 @@ class SetTester {
     }
     
     /**
-     * This function sets all requests callbacks to the same assertion callback
-     * @param {Function} assertCB 
+     * Sets the assertion callback for all requests.
+     * @param {Function} assertCB - The assertion callback function.
      */
     setAllRequestCallbacks(assertCB){
         try {
@@ -77,17 +88,24 @@ class SetTester {
     }
 
     /**
-     * 
-     * @returns {VarAccesor}
+     * Gets a new instance of VarAccesor.
+     * @returns {VarAccesor} A new instance of VarAccesor.
      */
-    getVarAccessor(){
+    async getVarAccessor(){
         try {
-            return new VarAccesor(this.set_id);
+            return await VarAccesor.asyncConstruct(this.set_id);
         } catch (error) {
             throw new Error("Failed to get variable accessor", {cause:error});
         }
     }
 
+    /**
+     * Runs all callbacks in a sequence.
+     * @param {Array} seq - The sequence of request IDs.
+     * @param {CookieTracker} [cookieTracker=null] - The cookie tracker instance.
+     * @param {boolean} [getcookies=false] - Whether to get the cookie tracker instance in the result.
+     * @returns {Array} An array of results.
+     */
     async runAllCallbacksInSequence(seq, cookieTracker=null, getcookies=false){
         try {
             const results = [];
@@ -106,6 +124,11 @@ class SetTester {
         }
     }
 
+    /**
+     * Runs all callbacks.
+     * @param {CookieTracker} [cookieTracker=null] - The cookie tracker instance.
+     * @returns {Object} An object containing the results of all callbacks.
+     */
     async runAllCallbacks(cookieTracker=null){
         try {
             let results = {};
@@ -121,11 +144,10 @@ class SetTester {
     }
 
     /**
-     * this function creates a callback for a specific request
-     * If you want to track cookies between requests, you need to pass a cookieTracker instance to the callback
-     * @param {String} req_id 
-     * @param {Function} assertionCB 
-     * @param {CookieTracker} cookieTracker
+     * Creates a callback for a specific request.
+     * @param {String} req_id - The ID of the request.
+     * @param {Function} assertionCB - The assertion callback function.
+     * @param {CookieTracker} [cookieTracker=null] - The cookie tracker instance.
      */
     createTestCallback(req_id, assertionCB=null){
         try {
@@ -143,9 +165,9 @@ class SetTester {
     }
 
     /**
-     * This function returns a new instance of RequestAlterer for a specific request
-     * @param {String} req_id 
-     * @returns {RequestAlterer}
+     * Gets a new instance of RequestAlterer for a specific request.
+     * @param {String} req_id - The ID of the request.
+     * @returns {RequestAlterer} A new instance of RequestAlterer.
      */
     getNewRequestAlterer(req_id){
         try {
@@ -157,10 +179,11 @@ class SetTester {
     }
 
     /**
-     * This function runs a specific request callback
-     * it returns an object with the result and the cookieTracker instance
-     * @param {String} req_id 
-     * @returns {Object}
+     * Runs a specific request callback.
+     * @param {String} req_id - The ID of the request.
+     * @param {CookieTracker} [cookieTracker=null] - The cookie tracker instance.
+     * @param {boolean} [getCookieTracker=false] - Whether to get the cookie tracker instance in the result.
+     * @returns {Object} An object containing the result and the cookie tracker instance.
      */
     async runCallback(req_id, cookieTracker=null, getCookieTracker=false){
         try {
@@ -174,11 +197,9 @@ class SetTester {
     }
 
     /**
-     * This function attaches a callback with an id that performs a test procedure.
-     * Note the callback is expected to use an instance of CostumTest class
-     * and call its methods such as createTestCallback and runCallback.
-     * @param {String} callback_id 
-     * @param {Function} callBack 
+     * Attaches a test procedure callback.
+     * @param {String} callback_id - The ID of the callback.
+     * @param {Function} callBack - The callback function.
      */
     attachTestProcedure(callback_id,callBack){
         try {
@@ -189,9 +210,10 @@ class SetTester {
     }
 
     /**
-     * This function runs a specific test procedure callback
-     * @param {String} callback_id 
-     * @returns {*} whatever the callback returns
+     * Runs a specific test procedure callback.
+     * @param {String} callback_id - The ID of the callback.
+     * @param {number} [index=null] - The index to pass to the callback.
+     * @returns {*} The result of the callback.
      */
     async runTestProcedure(callback_id, index=null){
         try {
@@ -203,5 +225,4 @@ class SetTester {
         }
     }
 }
-
 module.exports = SetTester;
