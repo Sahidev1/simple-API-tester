@@ -1,9 +1,11 @@
 const CookieTracker = require("./CookieTracker");
+const RequestAlterer = require("./RequestAlterer");
 const RequestTest = require("./RequestTest");
+const VarAccesor = require("./VarAccesor");
 const setLoader = require("./setLoader");
 
 
-class CustomTest {
+class SetTester {
     /**
      * 
      * @param {Object} set_id 
@@ -14,6 +16,7 @@ class CustomTest {
      */
     constructor(set_id, options=null){
         try {
+            this.set_id = set_id;
             this.options = options;
             this.set = setLoader(set_id);
             this.#init();
@@ -22,10 +25,11 @@ class CustomTest {
         }
     }
 
+    
+
     #init(){
         try {
             this.request_ids = Object.keys(this.set.requests);
-            (this.request_ids)
             if (this.options?.useCookie) this.useCookie = true;
             if (this.options?.myCookie) this.initCookie = this.options.myCookie;
             if (this.options?.includeRespData) this.includeRespData = true;
@@ -62,13 +66,25 @@ class CustomTest {
      * This function sets all requests callbacks to the same assertion callback
      * @param {Function} assertCB 
      */
-    async setAllRequestCallbacks(assertCB){
+    setAllRequestCallbacks(assertCB){
         try {
             for (const key in this.testCallback){
                 this.createTestCallback(key, assertCB);
             }
         } catch (error) {
             throw new Error("Failed to set all request callbacks", {cause:error});
+        }
+    }
+
+    /**
+     * 
+     * @returns {VarAccesor}
+     */
+    getVarAccessor(){
+        try {
+            return new VarAccesor(this.set_id);
+        } catch (error) {
+            throw new Error("Failed to get variable accessor", {cause:error});
         }
     }
 
@@ -86,7 +102,7 @@ class CustomTest {
             }
             return results;
         } catch (error) {
-            throw new Error("in sequence call of callbacks failed");
+            throw new Error("in sequence call of callbacks failed", {cause:error});
         }
     }
 
@@ -116,13 +132,27 @@ class CustomTest {
             if (!this.testCallback.hasOwnProperty(req_id)) throw new Error("invalid request identifier");
             this.testCallback[req_id] = async (cookieTracker=null)=> {
                 const opt = this.#createOptions(cookieTracker);
-                let test = new RequestTest(this.set, req_id, assertionCB, opt);
+                let test = new RequestTest(this.set.requests[req_id],req_id, assertionCB, opt);
                 let result = await test.run();
                 if (result?.["set-cookie"] && cookieTracker) cookieTracker.updateCookie(result["set-cookie"]);
                 return result;
             }
         } catch (error) {
             throw new Error("Failed to add callback", {cause:error});
+        }
+    }
+
+    /**
+     * This function returns a new instance of RequestAlterer for a specific request
+     * @param {String} req_id 
+     * @returns {RequestAlterer}
+     */
+    getNewRequestAlterer(req_id){
+        try {
+            if(!this.set.requests[req_id]) throw new Error("Set tester not loaded");
+            return new RequestAlterer(this.set.requests[req_id]);
+        } catch (error) {
+            throw new Error("Failed to get new request alterer", {cause:error});
         }
     }
 
@@ -163,9 +193,10 @@ class CustomTest {
      * @param {String} callback_id 
      * @returns {*} whatever the callback returns
      */
-    async runTestProcedure(callback_id){
+    async runTestProcedure(callback_id, index=null){
         try {
             if (!this.costumCallback?.[callback_id]) throw new Error("invalid callback identifier");
+            if (index !== null) return await this.costumCallback[callback_id](index);
             return await this.costumCallback[callback_id]();
         } catch (error) {
             throw new Error("Failed to run costum callback", {cause:error});
@@ -173,4 +204,4 @@ class CustomTest {
     }
 }
 
-module.exports = CustomTest;
+module.exports = SetTester;

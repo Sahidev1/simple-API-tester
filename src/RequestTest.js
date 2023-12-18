@@ -1,34 +1,36 @@
 
+/**
+ * Represents a request test.
+ * @class
+ */
 const axios = require('axios');
 
 class RequestTest {
-    // cookie=null ,listenForCookies=false, assertCB=null, getData=false
-    // options = {cookie: null, listenForCookies: false, getData: false, costumBody: null}
-
     /**
-     * 
-     * @param {Object} set 
-     * @param {string} request_id 
-     * @param {function} assertCB 
-     * @param {Object} [options]
-     * @param {string} [options.cookie]
-     * @param {boolean} [options.listenForCookies]
-     * @param {boolean} [options.getData]
-     * @param {Object} [options.costumBody]
+     * Creates a new RequestTest instance.
+     * @constructor
+     * @param {Object} request - The request object.
+     * @param {function} assertCB - The assertion callback function.
+     * @param {Object} [options] - The optional parameters.
+     * @param {string} [options.cookie] - The cookie value.
+     * @param {boolean} [options.listenForCookies] - Indicates whether to listen for cookies in the response.
+     * @param {boolean} [options.getData] - Indicates whether to include response data in the result.
+     * @param {Object} [options.customBody] - The custom request body.
      */
-    constructor(set, request_id, assertCB=null, options=null){
-        if (!set || !request_id) throw new Error('Please load a test set!');
-        this.set = set;
-        this.request_id = request_id;
+    constructor(request, req_id, assertCB=null, options=null){
+        if (!request) throw new Error('invalid request object');
+        this.request = request;
         this.assertCB = assertCB;
         this.options = options;
+        this.request_id = req_id;
     }
 
     /**
-     * 
-     * @param {Object} res 
-     * @param {Number} res_time 
-     * @returns {Object}
+     * Creates a test result object.
+     * @private
+     * @param {Object} res - The response object.
+     * @param {Number} res_time - The response time in milliseconds.
+     * @returns {Object} - The test result object.
      */
     #create_test_res(res, res_time){
         try {
@@ -46,16 +48,22 @@ class RequestTest {
         }
     }
 
+    /**
+     * Runs the request test.
+     * @async
+     * @returns {Object} - The test result.
+     * @throws {Error} - If the request test fails.
+     */
     async run(){
         try {
-            let req = this.set.requests[this.request_id];
-            if (this.options?.cookie) req.headers['cookie'] = this.cookie;
+            let req = this.request;
+            if (this.options?.cookie) req.headers['cookie'] = this.options.cookie;
             let conf = {
                 method: req.method,
                 maxBodyLength: Infinity,
                 url: req.url,
                 headers: req.headers || {},
-                data: this.options?.costumBody || req.body || {}
+                data: this.options?.customBody || req.body || {}
             };
             let start_ms = performance.now();
             const res = await axios(conf);
@@ -70,9 +78,10 @@ class RequestTest {
             }
             return result;
         } catch (error) {
-            throw new Error("Failed to run test", {cause: error});
+            if (error.response) return {"test-result": this.#create_test_res(error.response, 0)};
+            else throw new Error("Failed to run request test", {cause: error});
         }
     }
 }
 
-module.exports = RequestTest; 
+module.exports = RequestTest;
