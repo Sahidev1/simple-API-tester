@@ -65,11 +65,11 @@ class SimpleAPITester {
      * Runs a test procedure for a set tester.
      * @param {string} set_id - The ID of the set tester.
      * @param {string} test_id - The ID of the test procedure.
-     * @param {boolean} [logdata=false] - Indicates if the test data should be logged.
+     * @param {Function} [respCallback] - calls this on each response object, could be used for logging responses for example
      * @returns {Object} The result of the test procedure.
      * @throws {Error} If set tester is not loaded or failed to run test procedure.
      */
-    async runTestProcedure(set_id, test_id, logdata=false){
+    async runTestProcedure(set_id, test_id, respCallback=null){
         try {
             if (!this.setTesters[set_id]) throw new Error("Set tester not loaded");
             let iters = this.setTesters[set_id].tests[test_id].iterations;
@@ -78,9 +78,11 @@ class SimpleAPITester {
             for (let i = 0; i < iters; i++) {
                 let res = await this.setTesters[set_id].testerInstance.runTestProcedure(test_id, indexed?i:null);
                 if (!Array.isArray(res)) res = [res];
-                if (logdata) console.log(res);
+                if (respCallback) {
+                    res.forEach(e => respCallback(e));
+                };
                 res.forEach(e => {
-                    this.#handleResult(e, logdata, result);
+                    this.#handleResult(e, result);
                 });
             }
             return result;
@@ -89,9 +91,8 @@ class SimpleAPITester {
         }
     }
 
-    #handleResult(e, logdata, result) {
+    #handleResult(e, result) {
         if (e['cookieTracker']) {
-            if (logdata) console.log(e['cookieTracker']);
             e = e['result'];
         }
         if (!result[e['test-result']['request-id']]) {

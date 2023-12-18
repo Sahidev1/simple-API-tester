@@ -8,6 +8,7 @@ class RequestAlterer {
     #initMethod;
     #initHeaders;
     #initBody;
+    #initParams;
 
     /**
      * Creates a new instance of RequestAlterer.
@@ -21,6 +22,7 @@ class RequestAlterer {
             this.#readURLandMethod();
             this.#readHeaders();
             this.#readBody();
+            this.#readParams();
         } catch (error) {
             throw new Error("Failed to create RequestAlterer instance", { cause: error });
         }
@@ -51,6 +53,10 @@ class RequestAlterer {
         this.#initBody = Object.assign({}, this.request.body);
     }
 
+    #readParams() {
+        this.#initParams = Object.assign({}, this.request.params);
+    }
+
     /**
      * Sets the URL of the request.
      * @param {String} url - The new URL.
@@ -59,13 +65,14 @@ class RequestAlterer {
         this.request.url = url;
     }
 
+    setParams(params) {
+        this.request.params = params;
+    }
+
     /**
      * Sets the method of the request.
      * @param {String} method - The new method.
      */
-    setMethod(method) {
-        this.request.method = method;
-    }
 
     /**
      * Sets the headers of the request.
@@ -123,6 +130,20 @@ class RequestAlterer {
         return Object.assign({}, this.#initBody);
     }
 
+    getInitParams() {
+        return Object.assign({}, this.#initParams);
+    }
+
+
+    setParamProp(propKey, newVal) {
+        try {
+            if (!this.request.params[propKey]) throw new Error("Property not found");
+            this.request.params[propKey] = newVal;
+        } catch (error) {
+            throw new Error("Failed to set param property", { cause: error });
+        }
+    }
+
     /**
      * Sets a property of the request body.
      * @param {String} propKey - The property key.
@@ -146,6 +167,7 @@ class RequestAlterer {
         this.request.method = this.#initMethod;
         this.request.headers = this.#initHeaders;
         this.request.body = this.#initBody;
+        this.request.params = this.#initParams;
     }
 }
 

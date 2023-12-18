@@ -63,7 +63,8 @@ class RequestTest {
                 maxBodyLength: Infinity,
                 url: req.url,
                 headers: req.headers || {},
-                data: this.options?.customBody || req.body || {}
+                data: this.options?.customBody || req.body || {},
+                params: req.params || {}
             };
             let start_ms = performance.now();
             const res = await axios(conf);
