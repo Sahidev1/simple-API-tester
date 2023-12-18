@@ -1,0 +1,11 @@
+{
+    "set-0": {
+        "globals": {
+            "color": "red"
+        },
+        "locals": {
+            "userIndex":22,
+             "ordersIndex": 33
+        }
+    }
+}
