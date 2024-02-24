@@ -1,6 +1,5 @@
 const SetTestWrapper = require("./SetTestWrapper");
 const SetTester = require("./SetTester");
-const RequestAlterer = require("./RequestAlterer")
 
 /**
  * Represents a Simple API Tester.
