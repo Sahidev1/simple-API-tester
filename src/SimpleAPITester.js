@@ -1,5 +1,5 @@
 const SetTestWrapper = require("./SetTestWrapper");
-const SetTester = require("./SetTester");
+const SetTester = require("./TestRunner/SetTester");
 
 /**
  * Represents a Simple API Tester.

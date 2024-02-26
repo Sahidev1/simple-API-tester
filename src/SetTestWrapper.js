@@ -1,5 +1,5 @@
-const CookieTracker = require("./CookieTracker");
-const RequestAlterer = require("./RequestAlterer");
+const CookieTracker = require("./utilities/CookieTracker");
+const RequestAlterer = require("./utilities/RequestAlterer");
 
 /**
  * Represents a wrapper class for SetTester.
