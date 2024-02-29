@@ -1,14 +1,13 @@
 
+const _= require('lodash');
+
+
 /**
  * Represents a RequestAlterer object that modifies HTTP request properties.
  * @class
  */
 class RequestAlterer {
-    #initURL;
-    #initMethod;
-    #initHeaders;
-    #initBody;
-    #initParams;
+    #initRequest;
 
     /**
      * Creates a new instance of RequestAlterer.
@@ -19,42 +18,10 @@ class RequestAlterer {
         try {
             if (!request) throw new Error("Invalid arguments");
             this.request = request;
-            this.#readURLandMethod();
-            this.#readHeaders();
-            this.#readBody();
-            this.#readParams();
+            this.#initRequest = _.cloneDeep(this.request);
         } catch (error) {
             throw new Error("Failed to create RequestAlterer instance", { cause: error });
         }
-    }
-
-    /**
-     * Reads and stores the initial URL and method of the request.
-     * @private
-     */
-    #readURLandMethod() {
-        this.#initMethod = this.request.method;
-        this.#initURL = this.request.url;
-    }
-
-    /**
-     * Reads and stores the initial headers of the request.
-     * @private
-     */
-    #readHeaders() {
-        this.#initHeaders = Object.assign({}, this.request.headers);
-    }
-
-    /**
-     * Reads and stores the initial body of the request.
-     * @private
-     */
-    #readBody() {
-        this.#initBody = Object.assign({}, this.request.body);
-    }
-
-    #readParams() {
-        this.#initParams = Object.assign({}, this.request.params);
     }
 
     /**
@@ -73,6 +40,9 @@ class RequestAlterer {
      * Sets the method of the request.
      * @param {String} method - The new method.
      */
+    setMethod(method){
+        this.request.method = method;
+    }
 
     /**
      * Sets the headers of the request.
@@ -111,7 +81,7 @@ class RequestAlterer {
      * @returns {Object} - The headers.
      */
     getHeaders() {
-        return Object.assign({}, this.request.headers);
+        return _.cloneDeep(this.request.headers);
     }
 
     /**
@@ -119,21 +89,8 @@ class RequestAlterer {
      * @returns {Object} - The body.
      */
     getBody() {
-        return Object.assign({}, this.request.body);
+        return _.cloneDeep(this.request.body);
     }
-
-    /**
-     * Gets a copy of the initial body of the request.
-     * @returns {Object} - The initial body.
-     */
-    getInitBody() {
-        return Object.assign({}, this.#initBody);
-    }
-
-    getInitParams() {
-        return Object.assign({}, this.#initParams);
-    }
-
 
     setParamProp(propKey, newVal) {
         try {
@@ -163,11 +120,9 @@ class RequestAlterer {
      * Resets the request to its initial state.
      */
     resetRequest() {
-        this.request.url = this.#initURL;
-        this.request.method = this.#initMethod;
-        this.request.headers = this.#initHeaders;
-        this.request.body = this.#initBody;
-        this.request.params = this.#initParams;
+        Object.keys(this.#initRequest).forEach(key => {
+            this.request[key] = this.#initRequest[key];
+        });
     }
 }
 

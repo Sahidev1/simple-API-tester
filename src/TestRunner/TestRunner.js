@@ -3,21 +3,24 @@
  * @class
  */
 const RequestTest = require("./RequestTest");
+const setLoader = require("./setLoader");
+const RequestAlterer = require("./RequestAlterer");
 
-class SetTester {
+class TestRunner {
     /**
      * Creates an instance of SetTester.
-     * @param {Object} set - The ID of the set.
+     * @param {Object} set_id - The ID of the set.
      * @param {Object} [options] - Additional options.
      * @param {boolean} [options.useCookie] - Whether to use cookies.
      * @param {string} [options.myCookie] - The initial cookie value.
      * @param {boolean} [options.includeRespData] - Whether to include response data.
      */
-    constructor(set, options=null){
+    constructor(set_id, options=null){
         try {
-            if (!set) throw new Error("Invalid set object");
+            this.set_id = set_id;
             this.options = options;
-            this.set = set;
+            this.set = setLoader(this.set_id);
+            this.requestAlterer = {};
             this.#init();
         } catch (error) {
             throw new Error("Failed to create CostumTest instance", {cause:error});
@@ -164,16 +167,17 @@ class SetTester {
      * @param {String} req_id - The ID of the request.
      * @returns {RequestAlterer} A new instance of RequestAlterer.
      */
-    /* MOVE THIS FUNC!
-    getNewRequestAlterer(req_id){
+
+    getRequestAlterer(req_id){
         try {
             if(!this.set.requests[req_id]) throw new Error("Set tester not loaded");
-            return new RequestAlterer(this.set.requests[req_id]);
+            if(!this.requestAlterer[req_id]) this.requestAlterer[req_id] =  new RequestAlterer(this.set.requests[req_id]);
+            return this.requestAlterer[req_id];
         } catch (error) {
             throw new Error("Failed to get new request alterer", {cause:error});
         }
     }
-    */
+    
 
     /**
      * Runs a specific request callback.
@@ -197,6 +201,7 @@ class SetTester {
      * @param {String} callback_id - The ID of the callback.
      * @param {Function} callBack - The callback function.
      */
+    /** MOVE FUNC
     attachTestProcedure(callback_id,callBack){
         try {
             this.costumCallback[callback_id] = callBack.bind(this);
@@ -205,12 +210,16 @@ class SetTester {
         }
     }
 
+    **/
+
     /**
      * Runs a specific test procedure callback.
      * @param {String} callback_id - The ID of the callback.
      * @param {number} [index=null] - The index to pass to the callback.
      * @returns {*} The result of the callback.
      */
+
+    /** Move func
     async runTestProcedure(callback_id, index=null){
         try {
             if (!this.costumCallback?.[callback_id]) throw new Error("invalid callback identifier");
@@ -220,5 +229,6 @@ class SetTester {
             throw new Error("Failed to run costum callback", {cause:error});
         }
     }
+    */
 }
-module.exports = SetTester;
+module.exports = TestRunner;

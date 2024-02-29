@@ -1,7 +1,8 @@
 const fs = require('fs');
 const AsyncLock = require('async-lock');
 const path = require('path');
-const VARPATH = path.join(__dirname, '../data/variables.json');
+const VARPATH = path.join(__dirname, '../../data/variables.json');
+const _= require('lodash');
 
 const lock = new AsyncLock();
 const LOCK = 'Lock';
@@ -13,29 +14,44 @@ class VarAccesor {
     /**
      * Creates an instance of VarAccesor.
      * @constructor
-     * @param {string} set_id - The ID of the variable set.
+     * @param {string} varset_id - The ID of the variable set.
      * @returns {Promise<VarAccesor>} - The VarAccesor instance.
      */
-    static async asyncConstruct(set_id) {
+    static async asyncConstruct(varset_id=null) {
         try {
             let instance = new VarAccesor();
-            await instance.#init(set_id);
+            await instance.#init();
+            if (varset_id) instance.setVarSet(varset_id);
             return instance;
         } catch (error) {
             throw new Error("Failed to load variables", { cause: error });
         }
     }
     
-    async #init(set_id){
+    async #init(){
         try {
-            this.set_id = set_id;
             let data = await this.#LockedCallback(() => fs.readFileSync(VARPATH));
-            this.loaderVarObject = JSON.parse(data);
-            this.globals = this.loaderVarObject[set_id].globals;
-            this.locals = this.loaderVarObject[set_id].locals;
+            this.loadedVarObject = JSON.parse(data);
+            this.virtualVarSet = {};
         } catch (error) {
             throw new Error("Failed to load variables", { cause: error });
         }
+    }
+
+    setVarSet(varset_id){
+        try {
+            if (!this.loadedVarObject[varset_id]) throw new Error("set not found");
+            this.varset_id = varset_id;
+            this.varset = this.loadedVarObject[varset_id];
+            this.globals = _.cloneDeep(this.varset.globals);
+            this.locals = _.cloneDeep(this.varset.locals);
+        } catch (error) {
+            throw new Error("Failed to set test set", { cause: error });
+        }
+    }
+
+    checkIfTestSetLoaded(){
+        if (!this.varset_id) throw new Error("no test set loaded");
     }
 
     /**
@@ -44,12 +60,11 @@ class VarAccesor {
      * @param {any} value - The value of the local variable.
      * @throws {Error} If the number of arguments is invalid or if there is an error persisting the variable.
      */
-    async persistSetLocal(local_key, value) {
+    async persistVarSetLocal(local_key) {
         try {
-            if (arguments.length != 2) throw new Error("Invalid nr of arguments");
-            this.setLocal(local_key, value);
-            this.loaderVarObject[this.set_id].locals = this.locals;
-            await this.#LockedCallback(() => fs.writeFileSync(VARPATH, JSON.stringify(this.loaderVarObject)));
+            this.checkIfTestSetLoaded();
+            this.varset.locals[local_key] = this.locals[local_key];
+            await this.#LockedCallback(() => fs.writeFileSync(VARPATH, JSON.stringify(this.loadedVarObject)));
         } catch (error) {
             throw new Error("Failed to persist local variable", { cause: error });
         }
@@ -63,20 +78,67 @@ class VarAccesor {
         }
     }
 
+    createVirtualVarSet(varset_id){
+        try {
+            if (this.loadedVarObject[varset_id]) throw new Error("var set with this ID already exists");
+            this.varset = {globals:{}, locals:{}};
+            this.virtualVarSet[varset_id] = this.varset;
+            this.globals = this.varset.globals;
+            this.locals = this.varset.locals;
+        } catch (error) {
+            throw new Error("Failed to create var set", { cause: error });
+        }
+    }
+
+    copyAndCreateVirtualVarSet(varset_id, copy_varset_id){
+        try {
+            if (!this.loadedVarObject[copy_varset_id]) throw new Error("var set with this ID does not exist");
+            if (this.loadedVarObject[varset_id]) throw new Error("var set with this ID already exists");
+            this.varset = _.cloneDeep(this.loadedVarObject[copy_varset_id]);
+            console.log(this.varset)
+            this.virtualVarSet[varset_id] = this.varset;
+            this.globals = this.varset.globals;
+            this.locals = this.varset.locals;
+        } catch (error) {
+            throw new Error("Failed to create var set", { cause: error });
+        }
+    }
+
+    async persistVirtualVarSet(varset_id){
+        try {
+            if (!this.virtualVarSet[varset_id]) throw new Error("no virtual var set with this ID exists");
+            this.loadedVarObject[varset_id] = this.virtualVarSet[varset_id];
+            await this.#LockedCallback(() => fs.writeFileSync(VARPATH, JSON.stringify(this.loadedVarObject)));            
+        } catch (error) {
+            throw new Error("Failed to persist virtual varset set", { cause: error });
+        }
+    }
+
     /**
-     * Persists a global variable to the variable set.
+     * creates and Persists a global variable to the variable set.
      * @param {string} global_key - The key of the global variable.
      * @param {any} value - The value of the global variable.
      * @throws {Error} If the global variable already exists or if there is an error persisting the variable.
      */
-    async persistCreateGlobal(global_key, value) {
+    async persistNewGlobal(global_key){
         try {
-            if (this.globals[global_key]) throw new Error("global already exists");
-            this.globals[global_key] = value;
-            this.loaderVarObject[this.set_id].globals = this.globals;
-            await this.#LockedCallback(() => fs.writeFileSync(VARPATH, JSON.stringify(this.loaderVarObject)));
+            this.checkIfTestSetLoaded();
+            if (this.loadedVarObject[this.varset_id].globals[global_key]) throw new Error("global already exists");
+            this.loadedVarObject[this.varset_id].globals[global_key] = this.globals[global_key];
+            await this.#LockedCallback(() => fs.writeFileSync(VARPATH, JSON.stringify(this.loadedVarObject)));
         } catch (error) {
             throw new Error("Failed to persist global variable", { cause: error });
+        }
+    }
+
+    async persistAll(){
+        try {
+            this.checkIfTestSetLoaded();
+            this.loadedVarObject[this.varset_id].globals = this.globals;
+            this.loadedVarObject[this.varset_id].locals = this.locals;
+            await this.#LockedCallback(() => fs.writeFileSync(VARPATH, JSON.stringify(this.loadedVarObject)));
+        } catch (error) {
+            throw new Error("Failed to persist all variables", { cause: error });
         }
     }
 
@@ -86,6 +148,7 @@ class VarAccesor {
      * @param {any} value - The value of the local variable.
      */
     setLocal(local_key, value) {
+        if(!this.locals[local_key]) throw new Error("local var not found");
         this.locals[local_key] = value;
     }
 
@@ -95,6 +158,7 @@ class VarAccesor {
      * @returns {any} The value of the local variable.
      */
     getLocal(local_key) {
+        if(!this.locals[local_key]) throw new Error("local var not found");
         return this.locals[local_key];
     }
 
@@ -104,7 +168,16 @@ class VarAccesor {
      * @returns {any} The value of the global variable.
      */
     getGlobal(global_key) {
+        if (!this.globals[global_key]) throw new Error("global var not found");
         return this.globals[global_key];
+    }
+
+    createGlobal(global_key, value) {
+        this.globals[global_key] = value;
+    }
+
+    createLocal(local_key, value) {
+        this.locals[local_key] = value;
     }
 }
 
