@@ -43,6 +43,52 @@ class TestProcedureManager{
         }
     }
 
+    summarizeResults(results){
+        if (!Array.isArray(results)) results = [results];
+
+        let analysis = {
+            totalTests:0,
+            totalPassed:0,
+            responseTimes:[],
+            statusCount:{}
+        }
+        
+        results.reduce((acc, curr) => {
+            let testResult = curr['test-result'];
+
+            if (!acc.statusCount[testResult.status]) {
+                acc.statusCount[testResult.status] = 1;
+            } else {
+                acc.statusCount[testResult.status] += 1;
+            }
+
+            acc.totalTests++;
+
+            if (testResult.assertion === 'passed') acc.totalPassed++;
+
+            acc.responseTimes.push(testResult['response-time_ms']);
+            return acc;
+        }, analysis);
+
+        let sum_resp_times = analysis.responseTimes.reduce((acc, curr) => {
+            acc += curr;
+            return acc;
+        },0);
+
+        let passrate_percent = (analysis.totalPassed / analysis.totalTests) * 100;
+        const stats = {
+            'avg-responsetime': (sum_resp_times / analysis.totalTests),
+            'min-responsetime': Math.min(...analysis.responseTimes),
+            'max-response': Math.max(...analysis.responseTimes),
+            'totalTests': analysis.totalTests,
+            'totalPassed': analysis.totalPassed,
+            'pass-rate': `${passrate_percent}%`,
+            'status-count': analysis.statusCount
+        }
+
+        return {data:analysis, stats: stats};
+    }
+
     afterEachProcedure(proc_id, callback){
         this.afterEach[proc_id] = callback.bind(this);
     }
